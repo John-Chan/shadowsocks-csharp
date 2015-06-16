@@ -12,9 +12,11 @@ namespace Shadowsocks.Controller
     class Local : Listener.Service
     {
         private Configuration _config;
-        public Local(Configuration config)
+        private PerfCounter perfCounter;
+        public Local(Configuration config,  PerfCounter perfCounter)
         {
             this._config = config;
+            this.perfCounter = perfCounter;
         }
 
         public bool Handle(byte[] firstPacket, int length, Socket socket)
@@ -24,7 +26,7 @@ namespace Shadowsocks.Controller
                 return false;
             }
             socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
-            Handler handler = new Handler();
+            Handler handler = new Handler( perfCounter);
             handler.connection = socket;
             Server server = _config.GetCurrentServer();
             handler.encryptor = EncryptorFactory.GetEncryptor(server.method, server.password);
@@ -65,7 +67,12 @@ namespace Shadowsocks.Controller
         
         private object encryptionLock = new object();
         private object decryptionLock = new object();
+        private PerfCounter perfCounter;
 
+        public Handler( PerfCounter perfCounter)
+        {
+            this.perfCounter = perfCounter;
+        }
         public void Start(byte[] firstPacket, int length)
         {
             this._firstPacket = firstPacket;
@@ -294,6 +301,8 @@ namespace Shadowsocks.Controller
 
                 if (bytesRead > 0)
                 {
+                    perfCounter.getReceivedBytes().add(bytesRead);
+                    traceNetTraff();
                     int bytesToSend;
                     lock (decryptionLock)
                     {
@@ -332,6 +341,8 @@ namespace Shadowsocks.Controller
 
                 if (bytesRead > 0)
                 {
+                    perfCounter.getSentBytes().add(bytesRead);
+                    traceNetTraff();
                     int bytesToSend;
                     lock (encryptionLock)
                     {
@@ -393,6 +404,16 @@ namespace Shadowsocks.Controller
                 Logging.LogUsefulException(e);
                 this.Close();
             }
+        }
+        private void    traceNetTraff()
+        {
+#if (DEBUG)
+            String network = "R:" + PerfCounter.formatByteString(perfCounter.getReceivedBytes().getVal())
+                + ",S:" + PerfCounter.formatByteString(perfCounter.getSentBytes().getVal());
+            Console.WriteLine(network);
+#else
+            // do nothing
+#endif
         }
     }
 

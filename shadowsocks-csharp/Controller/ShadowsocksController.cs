@@ -23,6 +23,7 @@ namespace Shadowsocks.Controller
         private PolipoRunner polipoRunner;
         private GFWListUpdater gfwListUpdater;
         private bool stopped = false;
+        private PerfCounter perfCounter=new PerfCounter();
 
         private bool _systemProxyIsDirty = false;
 
@@ -53,6 +54,7 @@ namespace Shadowsocks.Controller
 
         public void Start()
         {
+            perfCounter.reset();
             Reload();
         }
 
@@ -69,6 +71,10 @@ namespace Shadowsocks.Controller
             return _config.GetCurrentServer();
         }
 
+        public PerfCounter  getPerfCounter()
+        {
+            return perfCounter;
+        }
         // always return copy
         public Configuration GetConfiguration()
         {
@@ -250,7 +256,7 @@ namespace Shadowsocks.Controller
             {
                 polipoRunner.Start(_config);
 
-                Local local = new Local(_config);
+                Local local = new Local(_config,  perfCounter);
                 List<Listener.Service> services = new List<Listener.Service>();
                 services.Add(local);
                 services.Add(_pacServer);

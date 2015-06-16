@@ -123,7 +123,6 @@ namespace Shadowsocks.View
                 icon = iconCopy;
             }
             _notifyIcon.Icon = Icon.FromHandle(icon.GetHicon());
-
             // we want to show more details but notify icon title is limited to 63 characters
             string text = I18N.GetString("Shadowsocks") + " " + UpdateChecker.Version + "\n" +
                 (enabled ?
@@ -170,6 +169,7 @@ namespace Shadowsocks.View
                 this.AutoStartupItem = CreateMenuItem("Start on Boot", new EventHandler(this.AutoStartupItem_Click)),
                 this.ShareOverLANItem = CreateMenuItem("Allow Clients from LAN", new EventHandler(this.ShareOverLANItem_Click)),
                 new MenuItem("-"),
+                CreateMenuItem("Show Status...", new EventHandler(this.showStatus)),
                 CreateMenuItem("Show Logs...", new EventHandler(this.ShowLogItem_Click)),
                 CreateMenuItem("About...", new EventHandler(this.AboutItem_Click)),
                 new MenuItem("-"),
@@ -554,6 +554,12 @@ namespace Shadowsocks.View
                 this.editGFWUserRuleItem.Enabled = false;
                 this.editOnlinePACItem.Enabled = true;
             }
+        }
+
+        private void showStatus(object sender, EventArgs e)
+        {
+            StatusForm form = new StatusForm(controller.GetConfiguration(),controller.getPerfCounter());
+            form.Show();
         }
     }
 }
